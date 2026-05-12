@@ -37,7 +37,7 @@ def save_company(symbol, company_name, market, sector, closing_price, pe_ratio):
 def save_director(symbol,name,title,director_type):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("""INSERT INTO OR REPLACE directors (symbol,name.title,director_type)
+    cursor.execute("""INSERT OR REPLACE INTO directors (symbol,name,title,director_type)
                    VALUES (?,?,?,?)""", (symbol,name,title,director_type))
     conn.commit()
     conn.close()
