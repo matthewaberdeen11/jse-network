@@ -1,5 +1,6 @@
 import sqlite3
 
+
 DB_NAME = "jse_network.db"
 
 def init_db():
@@ -41,3 +42,16 @@ def save_director(symbol,name,title,director_type):
                    VALUES (?,?,?,?)""", (symbol,name,title,director_type))
     conn.commit()
     conn.close()
+
+
+def get_graph_data():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""SELECT d1.symbol, d2.symbol, d1.name
+                   FROM directors d1
+                   JOIN directors d2 ON d1.name = d2.name
+                   WHERE d1.symbol < d2.symbol,
+                   SELECT ALL,
+                   SELECT symbol, company_name, market, closing_price FROM companies
+                   """)
+    

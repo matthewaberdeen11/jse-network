@@ -21,24 +21,24 @@ def fetch_directors(symbol):
 def load_all_data():
     init_db()
     data = fetch_all_stocks()
-    directors = fetch_directors()
     
     for stock in data["stocks"]:
         save_company(
             stock["symbol"],
             stock['company_name'],
             stock["market"],
-            stock.get["sector", ""],
-            stock.get["closing_price", 0],
-            stock["[pe-ratio]", 0]
+            stock.get("sector", ""),
+            stock.get("closing_price", 0),
+            stock.get("pe_ratio", 0)
         )
 
-        for director in directors:
+        director_data = fetch_directors(stock["symbol"])
+        for director in director_data["directors"]:
             save_director(
-                director["symbol"],
+                stock["symbol"],
                 director["name"],
-                director.get["title", ""],
-                director.get["director_type", ""]
+                director.get("title", ""),
+                director.get("director_type", "")
             )
 
                 
