@@ -2,6 +2,7 @@ import requests
 import os
 from dotenv import load_dotenv
 from app.db import init_db, save_company, save_director
+from app.db import init_db, save_company, save_director, clear_data
 
 load_dotenv()
 API_KEY = os.getenv("STACKS_API_KEY")
@@ -20,6 +21,7 @@ def fetch_directors(symbol):
 
 def load_all_data():
     init_db()
+    clear_data()
     data = fetch_all_stocks()
     
     for stock in data["stocks"]:
@@ -33,13 +35,14 @@ def load_all_data():
         )
 
         director_data = fetch_directors(stock["symbol"])
-        for director in director_data["directors"]:
-            save_director(
-                stock["symbol"],
-                director["name"],
-                director.get("title", ""),
-                director.get("director_type", "")
-            )
+        if "directors" in director_data:
+            for director in director_data["directors"]:
+                save_director(
+                    stock["symbol"],
+                    director["name"],
+                    director.get("title", ""),
+                    director.get("director_type", "")
+                )
 
                 
             

@@ -3,519 +3,488 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSE Network — Jamaica Stock Exchange Ownership Visualizer</title>
+    <title>JSE Network — Ownership Visualizer</title>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=Geist+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 163, 0.08); }
-            50% { box-shadow: 0 0 40px rgba(0, 255, 163, 0.15); }
-        }
-
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+        :root {
+            --bg: #fafaf9;
+            --surface: #ffffff;
+            --surface-raised: #f5f5f4;
+            --border: #e7e5e4;
+            --border-subtle: #f0efed;
+            --text-primary: #1c1917;
+            --text-secondary: #78716c;
+            --text-tertiary: #a8a29e;
+            --accent: #1c1917;
+            --accent-muted: #44403c;
+            --green: #16a34a;
+            --green-bg: #f0fdf4;
+            --green-border: #bbf7d0;
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --blue-border: #bfdbfe;
+            --amber: #d97706;
+            --amber-bg: #fffbeb;
+            --amber-border: #fde68a;
+            --graph-bg: #0f0f0f;
+            --radius: 8px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Instrument Sans', -apple-system, sans-serif;
-            background: #05080f;
-            color: #c8d6e5;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            opacity: 0.025;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-            pointer-events: none;
-            z-index: 9999;
+            -webkit-font-smoothing: antialiased;
         }
 
         header {
-            background: rgba(8, 12, 22, 0.85);
-            backdrop-filter: blur(40px) saturate(1.4);
-            -webkit-backdrop-filter: blur(40px) saturate(1.4);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            padding: 0 36px;
-            height: 64px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            height: 56px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 50;
-            position: relative;
         }
 
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 163, 0.2) 30%, rgba(56, 152, 255, 0.2) 70%, transparent);
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
         }
 
         .logo-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #00FFA3 0%, #0066FF 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Space Mono', monospace;
-            font-weight: 700;
-            font-size: 11px;
-            color: #05080f;
+            font-family: 'Newsreader', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
             letter-spacing: -0.5px;
-            position: relative;
         }
 
-        .logo-mark::after {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #00FFA3 0%, #0066FF 100%);
-            opacity: 0.3;
-            filter: blur(8px);
-            z-index: -1;
-        }
-
-        .logo-text {
-            font-size: 17px;
-            font-weight: 700;
-            letter-spacing: -0.6px;
-            color: #f0f4f8;
-        }
-
-        .logo-text span {
-            background: linear-gradient(135deg, #00FFA3, #0066FF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .logo-tag {
-            font-size: 10px;
-            font-weight: 500;
-            letter-spacing: 1.8px;
-            text-transform: uppercase;
-            color: #4a5568;
-            margin-left: 4px;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 32px;
-            align-items: center;
-        }
-
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-        }
-
-        .stat-num {
-            font-family: 'Space Mono', monospace;
-            font-size: 16px;
-            font-weight: 700;
-            color: #f0f4f8;
-        }
-
-        .stat-label {
-            font-size: 9px;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            color: #4a5568;
-        }
-
-        .stat-divider {
+        .logo-divider {
             width: 1px;
-            height: 28px;
-            background: rgba(255, 255, 255, 0.06);
+            height: 20px;
+            background: var(--border);
+        }
+
+        .logo-sub {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-tertiary);
+            letter-spacing: 0.2px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .stat-pill.companies {
+            background: var(--surface-raised);
+            color: var(--text-secondary);
+        }
+
+        .stat-pill.connections {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }
+
+        .stat-pill.directors {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }
+
+        .stat-pill .num {
+            font-family: 'Geist Mono', monospace;
+            font-weight: 500;
         }
 
         .header-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
-        .btn-ghost {
-            font-family: 'Instrument Sans', sans-serif;
-            font-size: 12px;
+        .btn-secondary {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-raised);
+            color: var(--text-primary);
+            border-color: #d6d3d1;
+        }
+
+        .btn-primary {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
             font-weight: 600;
-            letter-spacing: 0.3px;
-            padding: 8px 18px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.03);
-            color: #8892a4;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn-ghost:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.12);
-            color: #c8d6e5;
-            transform: translateY(-1px);
-        }
-
-        .btn-load {
-            font-family: 'Instrument Sans', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            padding: 8px 22px;
-            border-radius: 8px;
+            padding: 7px 16px;
+            border-radius: var(--radius);
             border: none;
-            background: linear-gradient(135deg, #00FFA3 0%, #00CC82 100%);
-            color: #05080f;
+            background: var(--accent);
+            color: white;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.15s ease;
         }
 
-        .btn-load::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 3s ease-in-out infinite;
+        .btn-primary:hover {
+            background: var(--accent-muted);
         }
-
-        .btn-load:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(0, 255, 163, 0.25);
-        }
-
-        .btn-load:active { transform: translateY(0); }
 
         .main-content {
             display: flex;
             flex: 1;
             overflow: hidden;
-            position: relative;
         }
 
         #network-container {
             flex: 1;
+            background: var(--graph-bg);
             position: relative;
-            background: #05080f;
         }
 
-        #network-container::before {
-            content: '';
+        .graph-label {
             position: absolute;
-            width: 600px;
-            height: 600px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(0, 255, 163, 0.04) 0%, rgba(0, 102, 255, 0.03) 40%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
+            bottom: 20px;
+            left: 20px;
+            z-index: 5;
+            display: flex;
+            gap: 14px;
+            align-items: center;
         }
 
-        #network-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 40%, #05080f 100%);
-            z-index: 1;
+        .graph-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: #737373;
+        }
+
+        .gl-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .gl-line {
+            width: 14px;
+            height: 2px;
+            border-radius: 1px;
         }
 
         .sidebar {
             width: 380px;
             min-width: 380px;
-            background: rgba(8, 12, 22, 0.6);
-            backdrop-filter: blur(60px) saturate(1.3);
-            -webkit-backdrop-filter: blur(60px) saturate(1.3);
-            border-left: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--surface);
+            border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            z-index: 10;
         }
 
-        .sidebar-header {
-            padding: 24px 28px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        .sidebar-top {
+            padding: 20px 24px 14px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
-        .sidebar-title {
-            font-size: 10px;
+        .sidebar-label {
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 2px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
-            color: #4a5568;
+            color: var(--text-tertiary);
         }
 
-        .sidebar-body {
+        .sidebar-scroll {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 28px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.08) transparent;
+            padding: 16px 24px 24px;
         }
 
-        .sidebar-body::-webkit-scrollbar { width: 4px; }
-        .sidebar-body::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar { width: 3px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
         .placeholder {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 48px 20px;
+            padding: 56px 24px;
             text-align: center;
-            animation: fadeInUp 0.6s ease;
         }
 
-        .placeholder-orb {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(0, 255, 163, 0.08), rgba(0, 102, 255, 0.08));
-            border: 1px solid rgba(255, 255, 255, 0.04);
+        .ph-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            margin-bottom: 20px;
-            animation: pulseGlow 3s ease-in-out infinite;
-        }
-
-        .placeholder h3 {
-            font-size: 15px;
-            font-weight: 600;
-            color: #8892a4;
-            margin-bottom: 8px;
-        }
-
-        .placeholder p {
-            font-size: 13px;
-            color: #4a5568;
-            line-height: 1.6;
-            max-width: 260px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
-            padding: 22px;
-            margin-bottom: 14px;
-            animation: slideInRight 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #00FFA3, #0066FF);
-            opacity: 0.6;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            font-size: 20px;
             margin-bottom: 16px;
         }
 
-        .card-company {
-            font-size: 19px;
-            font-weight: 700;
-            color: #f0f4f8;
+        .ph-title {
+            font-family: 'Newsreader', serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .ph-desc {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            line-height: 1.55;
+            max-width: 240px;
+        }
+
+        .detail-header {
+            margin-bottom: 20px;
+        }
+
+        .detail-name {
+            font-family: 'Newsreader', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
             letter-spacing: -0.3px;
             line-height: 1.2;
+            margin-bottom: 6px;
         }
 
-        .card-symbol {
-            font-family: 'Space Mono', monospace;
-            font-size: 11px;
-            font-weight: 700;
-            color: #00FFA3;
-            background: rgba(0, 255, 163, 0.08);
-            border: 1px solid rgba(0, 255, 163, 0.12);
-            padding: 3px 10px;
-            border-radius: 6px;
-            letter-spacing: 0.5px;
+        .detail-symbol {
+            font-family: 'Geist Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--green);
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
-        .card-grid {
+        .detail-metrics {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             overflow: hidden;
-            margin-bottom: 4px;
+            margin-bottom: 24px;
         }
 
-        .card-metric {
+        .dm-cell {
+            background: var(--surface);
             padding: 14px 12px;
-            background: rgba(5, 8, 15, 0.6);
             text-align: center;
         }
 
-        .card-metric:first-child { border-radius: 10px 0 0 10px; }
-        .card-metric:last-child { border-radius: 0 10px 10px 0; }
-
-        .metric-val {
-            font-family: 'Space Mono', monospace;
-            font-size: 15px;
-            font-weight: 700;
-            color: #f0f4f8;
-            margin-bottom: 4px;
+        .dm-val {
+            font-family: 'Geist Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 3px;
         }
 
-        .metric-key {
-            font-size: 9px;
-            letter-spacing: 1px;
+        .dm-key {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            color: #4a5568;
+            color: var(--text-tertiary);
         }
 
         .section-label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 2px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
-            color: #4a5568;
-            margin: 20px 0 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 10px;
         }
 
-        .conn-card {
+        /* ── Directors list ── */
+        .dir-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            justify-content: space-between;
+            padding: 10px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
+        }
+
+        .dir-info { flex: 1; min-width: 0; }
+
+        .dir-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dir-title {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 1px;
+        }
+
+        .dir-badge {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 2px 8px;
             border-radius: 10px;
-            margin-bottom: 8px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .dir-badge.chairman {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }
+
+        .dir-badge.executive {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .dir-badge.non-executive,
+        .dir-badge.independent {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }
+
+        .dir-badge.default {
+            background: var(--surface-raised);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        /* ── Connections list ── */
+        .conn-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            animation: slideInRight 0.4s ease;
+            transition: all 0.12s ease;
         }
 
-        .conn-card:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(0, 255, 163, 0.15);
-            transform: translateX(2px);
+        .conn-item:hover {
+            border-color: var(--border);
+            background: var(--surface-raised);
         }
 
-        .conn-dot {
-            width: 8px;
-            height: 8px;
+        .ci-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .conn-dot.main { background: #00FFA3; box-shadow: 0 0 8px rgba(0, 255, 163, 0.3); }
-        .conn-dot.junior { background: #3898FF; box-shadow: 0 0 8px rgba(56, 152, 255, 0.3); }
+        .ci-dot.main { background: var(--green); }
+        .ci-dot.junior { background: var(--blue); }
 
-        .conn-info { flex: 1; min-width: 0; }
+        .ci-body { flex: 1; min-width: 0; }
 
-        .conn-symbol {
-            font-family: 'Space Mono', monospace;
+        .ci-symbol {
+            font-family: 'Geist Mono', monospace;
             font-size: 12px;
-            font-weight: 700;
-            color: #f0f4f8;
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
-        .conn-via {
-            font-size: 11px;
-            color: #4a5568;
+        .ci-name {
+            font-size: 12px;
+            color: var(--text-tertiary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .conn-arrow { color: #2d3748; font-size: 14px; flex-shrink: 0; }
-
-        .sidebar-footer {
-            padding: 16px 28px;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .legend-row {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .ci-via {
             font-size: 11px;
-            color: #4a5568;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
         }
 
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        .ci-arrow {
+            color: var(--text-tertiary);
+            font-size: 12px;
+            flex-shrink: 0;
         }
 
-        .legend-line {
-            width: 16px;
-            height: 2px;
-            border-radius: 1px;
-            background: #f59e0b;
+        .empty-state {
+            text-align: center;
+            padding: 24px 16px;
+            font-size: 13px;
+            color: var(--text-tertiary);
         }
 
+        .section-divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin: 20px 0;
+        }
+
+        /* ── Loading ── */
         .loading-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(5, 8, 15, 0.92);
-            backdrop-filter: blur(20px);
+            background: rgba(250, 250, 249, 0.92);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -525,116 +494,104 @@
 
         .loading-overlay.active { display: flex; }
 
-        .loader {
-            width: 44px;
-            height: 44px;
+        .ld-spinner {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 2.5px solid rgba(255, 255, 255, 0.06);
-            border-top-color: #00FFA3;
-            animation: spin 0.7s linear infinite;
-            margin-bottom: 20px;
+            border: 2.5px solid var(--border);
+            border-top-color: var(--accent);
+            animation: spin 0.65s linear infinite;
+            margin-bottom: 16px;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .loader-text { font-size: 13px; color: #4a5568; letter-spacing: 0.3px; }
-        .loader-sub { font-size: 11px; color: #2d3748; margin-top: 6px; }
+        .ld-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
 
-        .empty-conn {
-            text-align: center;
-            padding: 20px;
-            font-size: 13px;
-            color: #2d3748;
-            font-style: italic;
+        .ld-sub {
+            font-size: 12px;
+            color: var(--text-tertiary);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            <div class="logo-mark">JSE</div>
-            <div>
-                <div class="logo-text">JSE <span>Network</span></div>
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-mark">JSE Network</div>
+                <div class="logo-divider"></div>
+                <div class="logo-sub">Ownership Visualizer</div>
             </div>
-            <div class="logo-tag">Ownership Visualizer</div>
         </div>
 
-        <div class="stats-row">
-            <div class="stat">
-                <div class="stat-num" id="stat-companies">&mdash;</div>
-                <div class="stat-label">Companies</div>
+        <div class="header-stats">
+            <div class="stat-pill companies">
+                <span class="num" id="stat-companies">&mdash;</span> companies
             </div>
-            <div class="stat-divider"></div>
-            <div class="stat">
-                <div class="stat-num" id="stat-connections">&mdash;</div>
-                <div class="stat-label">Connections</div>
+            <div class="stat-pill connections">
+                <span class="num" id="stat-connections">&mdash;</span> connections
             </div>
-            <div class="stat-divider"></div>
-            <div class="stat">
-                <div class="stat-num" id="stat-directors">&mdash;</div>
-                <div class="stat-label">Shared Directors</div>
+            <div class="stat-pill directors">
+                <span class="num" id="stat-directors">&mdash;</span> shared directors
             </div>
         </div>
 
         <div class="header-actions">
-            <button class="btn-ghost" onclick="resetView()">Reset View</button>
-            <button class="btn-load" onclick="loadData()">Load JSE Data</button>
+            <button class="btn-secondary" onclick="resetView()">Reset view</button>
+            <button class="btn-primary" onclick="loadData()">Load JSE data</button>
         </div>
     </header>
 
     <div class="main-content">
-        <div id="network-container"></div>
-
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">Company Details</div>
-            </div>
-            <div class="sidebar-body" id="details-panel">
-                <div class="placeholder">
-                    <div class="placeholder-orb">&#127963;</div>
-                    <h3>No Company Selected</h3>
-                    <p>Load JSE data and click on any company node to explore its board of directors and connections.</p>
+        <div id="network-container">
+            <div class="graph-label">
+                <div class="graph-legend-item">
+                    <div class="gl-dot" style="background:#4ade80;"></div>
+                    Main Market
+                </div>
+                <div class="graph-legend-item">
+                    <div class="gl-dot" style="background:#60a5fa;"></div>
+                    Junior Market
+                </div>
+                <div class="graph-legend-item">
+                    <div class="gl-line" style="background:#fbbf24;"></div>
+                    Shared director
                 </div>
             </div>
-            <div class="sidebar-footer">
-                <div class="legend-row">
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #00FFA3;"></div>
-                        Main Market
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #3898FF;"></div>
-                        Junior Market
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line"></div>
-                        Shared Director
-                    </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-label">Company details</div>
+            </div>
+            <div class="sidebar-scroll" id="details-panel">
+                <div class="placeholder">
+                    <div class="ph-icon">&#9678;</div>
+                    <div class="ph-title">Select a company</div>
+                    <div class="ph-desc">Click "Load JSE data" to fetch live market data, then click any node to explore its board and connections.</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="loading-overlay" id="loading">
-        <div class="loader"></div>
-        <div class="loader-text">Fetching live data from Stacks JSE API</div>
-        <div class="loader-sub">This may take a moment — loading all listed companies</div>
+        <div class="ld-spinner"></div>
+        <div class="ld-text">Loading JSE data</div>
+        <div class="ld-sub">Fetching companies and directors from Stacks API</div>
     </div>
 
     <script>
         let network = null;
         let graphData = null;
 
-        const MARKET_COLORS = {
-            main:    { bg: '#00FFA3', border: '#00CC82', glow: 'rgba(0,255,163,0.35)' },
-            junior:  { bg: '#3898FF', border: '#2070E0', glow: 'rgba(56,152,255,0.35)' },
-            default: { bg: '#4a5568', border: '#2d3748', glow: 'rgba(74,85,104,0.2)' }
-        };
-
         async function loadData() {
             document.getElementById('loading').classList.add('active');
-
             try {
                 await fetch('/api/load');
                 const res = await fetch('/api/graph');
@@ -642,14 +599,13 @@
 
                 document.getElementById('stat-companies').textContent = graphData.nodes.length;
                 document.getElementById('stat-connections').textContent = graphData.edges.length;
-
-                const uniqueDirectors = [...new Set(graphData.edges.map(e => e.director))];
-                document.getElementById('stat-directors').textContent = uniqueDirectors.length;
+                const unique = [...new Set(graphData.edges.map(e => e.director))];
+                document.getElementById('stat-directors').textContent = unique.length;
 
                 drawNetwork();
             } catch (err) {
                 console.error(err);
-                alert('Failed to load data. Check the console for details.');
+                alert('Failed to load data.');
             } finally {
                 document.getElementById('loading').classList.remove('active');
             }
@@ -660,31 +616,29 @@
 
             const nodes = graphData.nodes.map(n => {
                 const m = (n.market || '').toLowerCase().replace(' market', '');
-                const c = MARKET_COLORS[m] || MARKET_COLORS.default;
+                const isMain = m === 'main';
                 const connected = graphData.edges.some(e => e.from === n.id || e.to === n.id);
 
                 return {
                     id: n.id,
                     label: n.id,
                     title: n.label,
-                    size: connected ? 22 : 8,
+                    size: connected ? 18 : 8,
                     color: {
-                        background: c.bg,
-                        border: c.border,
-                        highlight: { background: '#ffffff', border: c.bg },
-                        hover: { background: c.bg, border: '#ffffff' }
+                        background: isMain ? '#4ade80' : '#60a5fa',
+                        border: isMain ? '#22c55e' : '#3b82f6',
+                        highlight: { background: '#ffffff', border: isMain ? '#16a34a' : '#2563eb' },
+                        hover: { background: isMain ? '#86efac' : '#93c5fd', border: isMain ? '#16a34a' : '#2563eb' }
                     },
                     font: {
-                        color: connected ? '#c8d6e5' : '#2d3748',
-                        size: connected ? 11 : 0,
-                        face: 'Instrument Sans, sans-serif',
-                        strokeWidth: 4,
-                        strokeColor: '#05080f'
+                        color: '#d4d4d4',
+                        size: connected ? 10 : 8,
+                        face: 'Outfit, sans-serif',
+                        strokeWidth: 3,
+                        strokeColor: '#0f0f0f'
                     },
-                    borderWidth: connected ? 2.5 : 1.5,
-                    shadow: connected
-                        ? { enabled: true, color: c.glow, size: 20, x: 0, y: 0 }
-                        : false,
+                    borderWidth: connected ? 2 : 1,
+                    shadow: false,
                     _label: n.label,
                     _market: n.market,
                     _price: n.price
@@ -695,11 +649,10 @@
                 id: i,
                 from: e.from,
                 to: e.to,
-                title: 'Shared director: ' + e.director,
-                color: { color: 'rgba(245,158,11,0.25)', highlight: '#f59e0b', hover: 'rgba(245,158,11,0.5)' },
-                width: 1.8,
-                smooth: { type: 'continuous', roundness: 0.4 },
-                hoverWidth: 0.5,
+                title: 'Shared: ' + e.director,
+                color: { color: 'rgba(251,191,36,0.35)', highlight: '#fbbf24', hover: 'rgba(251,191,36,0.6)' },
+                width: 1.5,
+                smooth: { type: 'continuous', roundness: 0.35 },
                 _director: e.director
             }));
 
@@ -711,95 +664,108 @@
             const options = {
                 physics: {
                     forceAtlas2Based: {
-                        gravitationalConstant: -50,
-                        centralGravity: 0.006,
-                        springLength: 220,
-                        springConstant: 0.015,
+                        gravitationalConstant: -45,
+                        centralGravity: 0.005,
+                        springLength: 200,
+                        springConstant: 0.018,
                         damping: 0.45,
-                        avoidOverlap: 0.4
+                        avoidOverlap: 0.35
                     },
                     solver: 'forceAtlas2Based',
-                    stabilization: { iterations: 250, updateInterval: 25 }
+                    stabilization: { iterations: 200, updateInterval: 25 }
                 },
                 interaction: {
                     hover: true,
                     tooltipDelay: 80,
                     zoomView: true,
-                    dragView: true,
-                    zoomSpeed: 0.6
+                    dragView: true
                 }
             };
 
             network = new vis.Network(container, data, options);
-
-            network.on('click', params => {
-                if (params.nodes.length) showDetails(params.nodes[0]);
-            });
-
+            network.on('click', p => { if (p.nodes.length) showDetails(p.nodes[0]); });
             network.on('hoverNode', () => { container.style.cursor = 'pointer'; });
-            network.on('blurNode',  () => { container.style.cursor = 'default'; });
+            network.on('blurNode', () => { container.style.cursor = 'default'; });
         }
 
-        function showDetails(symbol) {
+        async function showDetails(symbol) {
             const node = graphData.nodes.find(n => n.id === symbol);
             if (!node) return;
-
-            const conns = graphData.edges.filter(e => e.from === symbol || e.to === symbol);
-
             if (network) network.selectNodes([symbol]);
 
+            const conns = graphData.edges.filter(e => e.from === symbol || e.to === symbol);
+            const market = (node.market || 'N/A').replace(' Market', '');
+            const price = node.price ? 'J$' + parseFloat(node.price).toFixed(2) : '\u2014';
+
+            // Fetch directors for this company
+            let directorsHTML = '';
+            try {
+                const dirRes = await fetch('/api/directors/' + symbol);
+                const directors = await dirRes.json();
+
+                if (directors.length > 0) {
+                    directorsHTML = '<div class="section-label">Board of Directors</div>' +
+                        directors.map(d => {
+                            const badgeClass = (d.type || '').toLowerCase().replace(' ', '-');
+                            const validBadge = ['chairman', 'executive', 'non-executive', 'independent'].includes(badgeClass) ? badgeClass : 'default';
+                            const badgeText = d.type || 'Director';
+                            return '<div class="dir-item">' +
+                                '<div class="dir-info">' +
+                                    '<div class="dir-name">' + d.name + '</div>' +
+                                    (d.title ? '<div class="dir-title">' + d.title + '</div>' : '') +
+                                '</div>' +
+                                '<div class="dir-badge ' + validBadge + '">' + badgeText + '</div>' +
+                            '</div>';
+                        }).join('');
+                } else {
+                    directorsHTML = '<div class="section-label">Board of Directors</div>' +
+                        '<div class="empty-state">No director data available</div>';
+                }
+            } catch (err) {
+                directorsHTML = '<div class="section-label">Board of Directors</div>' +
+                    '<div class="empty-state">Could not load directors</div>';
+            }
+
+            // Build connections HTML
             let connsHTML = '';
             if (conns.length > 0) {
                 connsHTML = '<div class="section-label">Board Connections</div>' +
-                    conns.map((c, i) => {
+                    conns.map(c => {
                         const other = c.from === symbol ? c.to : c.from;
                         const otherNode = graphData.nodes.find(n => n.id === other);
-                        const market = (otherNode && otherNode.market ? otherNode.market : '').toLowerCase().replace(' market', '');
-                        return '<div class="conn-card" style="animation-delay: ' + (i * 60) + 'ms" onclick="showDetails(\'' + other + '\')">' +
-                            '<div class="conn-dot ' + market + '"></div>' +
-                            '<div class="conn-info">' +
-                                '<div class="conn-symbol">' + other + ' <span style="font-family: Instrument Sans; font-weight: 400; color: #4a5568; font-size: 11px;">' + (otherNode ? otherNode.label : '') + '</span></div>' +
-                                '<div class="conn-via">via ' + c.director + '</div>' +
+                        const m = (otherNode && otherNode.market ? otherNode.market : '').toLowerCase().replace(' market', '');
+                        return '<div class="conn-item" onclick="showDetails(\'' + other + '\')">' +
+                            '<div class="ci-dot ' + m + '"></div>' +
+                            '<div class="ci-body">' +
+                                '<div class="ci-symbol">' + other + '</div>' +
+                                '<div class="ci-name">' + (otherNode ? otherNode.label : '') + '</div>' +
+                                '<div class="ci-via">via ' + c.director + '</div>' +
                             '</div>' +
-                            '<div class="conn-arrow">&rarr;</div>' +
+                            '<div class="ci-arrow">\u2192</div>' +
                         '</div>';
                     }).join('');
             } else {
                 connsHTML = '<div class="section-label">Board Connections</div>' +
-                    '<div class="empty-conn">No shared directors detected</div>';
+                    '<div class="empty-state">No shared directors detected</div>';
             }
 
-            const market = (node.market || 'N/A').replace(' Market', '');
-            const price = node.price ? 'J$' + parseFloat(node.price).toFixed(2) : '&mdash;';
-
             document.getElementById('details-panel').innerHTML =
-                '<div class="card">' +
-                    '<div class="card-header">' +
-                        '<div class="card-company">' + node.label + '</div>' +
-                        '<div class="card-symbol">' + node.id + '</div>' +
-                    '</div>' +
-                    '<div class="card-grid">' +
-                        '<div class="card-metric">' +
-                            '<div class="metric-val">' + market + '</div>' +
-                            '<div class="metric-key">Market</div>' +
-                        '</div>' +
-                        '<div class="card-metric">' +
-                            '<div class="metric-val">' + price + '</div>' +
-                            '<div class="metric-key">Last Price</div>' +
-                        '</div>' +
-                        '<div class="card-metric">' +
-                            '<div class="metric-val">' + conns.length + '</div>' +
-                            '<div class="metric-key">Links</div>' +
-                        '</div>' +
-                    '</div>' +
+                '<div class="detail-header">' +
+                    '<div class="detail-name">' + node.label + '</div>' +
+                    '<div class="detail-symbol">' + node.id + '</div>' +
                 '</div>' +
+                '<div class="detail-metrics">' +
+                    '<div class="dm-cell"><div class="dm-val">' + market + '</div><div class="dm-key">Market</div></div>' +
+                    '<div class="dm-cell"><div class="dm-val">' + price + '</div><div class="dm-key">Price</div></div>' +
+                    '<div class="dm-cell"><div class="dm-val">' + conns.length + '</div><div class="dm-key">Links</div></div>' +
+                '</div>' +
+                directorsHTML +
+                '<div class="section-divider"></div>' +
                 connsHTML;
         }
 
         function resetView() {
-            if (network) {
-                network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
-            }
+            if (network) network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
         }
     </script>
 </body>

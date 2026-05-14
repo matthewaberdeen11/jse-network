@@ -24,6 +24,14 @@ def init_db():
                    director_type TEXT
                 )""")
     
+    cursor.execute("""CREATE TABLE IF NOT EXISTS shareholders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    percentage REAL,
+                    share_count TEXT
+                )""")
+    
     conn.commit()
     conn.close()
     
@@ -70,4 +78,35 @@ def get_graph_data():
 
     return {"nodes": nodes, "edges": edges}
     
-    
+def clear_data():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM directors")
+    cursor.execute("DELETE FROM companies")
+    cursor.execute("DELETE FROM shareholders")
+    conn.commit()
+    conn.close()
+
+def save_shareholder(symbol, name, percentage, share_count):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""INSERT INTO shareholders (symbol, name, percentage, share_count)
+                      VALUES (?, ?, ?, ?)""", (symbol, name, percentage, share_count))
+    conn.commit()
+    conn.close()
+
+def get_shareholders(symbol):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, percentage, share_count FROM shareholders WHERE symbol = ?", (symbol,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"name": r[0], "percentage": r[1], "shares": r[2]} for r in rows]
+
+def get_directors(symbol):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, title, director_type FROM directors WHERE symbol = ?", (symbol,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"name": r[0], "title": r[1], "type": r[2]} for r in rows]
