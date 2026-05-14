@@ -47,11 +47,27 @@ def save_director(symbol,name,title,director_type):
 def get_graph_data():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    cursor.execute("""SELECT symbol, company_name, market, closing_price FROM companies""")
+    companies = cursor.fetchall()
+
     cursor.execute("""SELECT d1.symbol, d2.symbol, d1.name
                    FROM directors d1
                    JOIN directors d2 ON d1.name = d2.name
-                   WHERE d1.symbol < d2.symbol,
-                   SELECT ALL,
-                   SELECT symbol, company_name, market, closing_price FROM companies
-                   """)
+                   WHERE d1.symbol < d2.symbol""")
+    connections = cursor.fetchall()
+
+    conn.close()
+
+    nodes = []
+    for row in companies:
+        symbol, company_name, market, closing_price = row
+        nodes.append({"id": symbol, "label": company_name, "market": market, "price": closing_price})
+    
+    edges = []
+    for row in connections:
+        symbol1, symbol2, name = row
+        edges.append({"from": symbol1, "to": symbol2, "director": name})
+
+    return {"nodes": nodes, "edges": edges}
+    
     
